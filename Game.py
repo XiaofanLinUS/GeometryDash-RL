@@ -43,22 +43,24 @@ class Game():
         cv2.namedWindow('game')
         cv2.moveWindow('game', 1000, 0)
 
-    def get_report(self):
+    def get_report(self, move):
         current_time = time.time()
         time_gap = current_time - self.current_time
         reward = 0
         self.current_time = current_time
         current_screen = grab_screen(0,64,800,600+64)
         current_screen = cv2.cvtColor(current_screen, cv2.COLOR_BGR2GRAY)
+        self.check_game_over(current_screen)
+        current_screen = cv2.resize(current_screen,(400, 400), interpolation = cv2.INTER_CUBIC)
         if self.prev_screen is None:
-            screen_diff = np.zeros((600, 800), dtype=np.uint8)
+            screen_diff = np.zeros((400, 400), dtype=np.uint8)
         else:
             screen_diff = current_screen - self.prev_screen
         self.prev_screen = current_screen
-        self.check_game_over(current_screen)
         if self.pause == False:
-            keyboard.press(Key.up)
-            keyboard.release(Key.up)
+            if move == 1:
+                keyboard.press(Key.up)
+                keyboard.release(Key.up)
         else:
             time_alive = self.current_time - self.begin_time
             if time_alive > self.best_time:
@@ -75,13 +77,15 @@ class Game():
         print(f'{time_gap} seconds since last report')
         print(f'reward: {reward}')
 
-        return reward, self.check_game_over(current_screen)
+        return reward, self.pause, screen_diff
         
 
     def reset(self):
         # signal the game to restart
         keyboard.press(Key.space)
         keyboard.release(Key.space)
+        # i don't know why but i have to pause for a bit
+        time.sleep(0.05)
         self.begin_time = time.time()
         self.current_time = time.time()
         self.pause = False
